@@ -34,7 +34,7 @@ class QueueTest extends PHPUnit_Framework_TestCase
      */
     public function testWillThrowExceptionOnBadJob()
     {
-        $this->q->enqueue(stdClass);
+        $this->q->enqueue(BadJob);
     }
 
 }

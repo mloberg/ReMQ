@@ -11,3 +11,5 @@ class TestJob
     }
 
 }
+
+class BadJob { }
