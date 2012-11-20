@@ -26,7 +26,7 @@ class QueueTest extends PHPUnit_Framework_TestCase
                   ->with($this->equalTo('remq:test'),
                          $this->equalTo(json_encode(array('TestJob', 'foo', 'bar'))))
                   ->will($this->returnValue(true));
-        $this->assertTrue($q->enqueue(TestJob, 'foo', 'bar'));
+        $this->assertTrue($q->enqueue('TestJob', 'foo', 'bar'));
     }
 
     /**
@@ -34,7 +34,7 @@ class QueueTest extends PHPUnit_Framework_TestCase
      */
     public function testWillThrowExceptionOnBadJob()
     {
-        $this->q->enqueue(BadJob);
+        $this->q->enqueue('BadJob');
     }
 
 }
