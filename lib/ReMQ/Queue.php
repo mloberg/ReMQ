@@ -18,7 +18,7 @@ class Queue extends ReMQ
      */
     public function __construct($queue)
     {
-        $this->queue = 'remq:' . strtolower($queue);
+        $this->queue = $this->normalizeQueueName($queue);
     }
 
     /**

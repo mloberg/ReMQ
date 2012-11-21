@@ -4,6 +4,14 @@
 
 Redis Message Queue (ReMQ) is a message queue built on top of the awesome Redis key-value store.
 
+## Getting ReMQ
+
+ReMQ is published on [Packagist](https://packagist.org/packages/remq/remq), so you can install it using [Composer](http://getcomposer.org/).
+
+	"require": {
+		"remq/remq": "version"
+	}
+
 ## Jobs
 
 Jobs are stored as classes. The class must have a perform method which can take a variable number of parameters.
@@ -72,3 +80,7 @@ ReMQ is using [Predis](https://github.com/nrk/predis) to connect with Redis. By 
 If Redis has an auth password, you will need to call the auth command before queuing or processing any jobs.
 
 	$queue->redis()->auth('your-pass');
+
+## Contributing
+
+If you have made any changes or modifications (and passing tests) to ReMQ, please open a pull request. I would love to have it included in the official package.
