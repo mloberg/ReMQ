@@ -50,9 +50,11 @@ class Worker extends ReMQ
      */
     public function removeQueue($name)
     {
-        $this->queues = array_filter($this->queues, function($q) {
-            return !$q === $name;
-        });
+        foreach ($this->queues as $key => $value) {
+            if ($value === $name) {
+                unset($this->queues[$key]);
+            }
+        }
     }
 
     /**
@@ -70,7 +72,32 @@ class Worker extends ReMQ
      */
     public static function process()
     {
-        //
+        // need to match queues
+        // trap CTRL-C
+        pcntl_signal(SIGTERM, function($signo) {
+            //
+        });
+        // loop
+        if ($time === 0) {
+            // loop forever
+            $while = true;
+        } else {
+            $start = time();
+            $while = ($start + $time) > time();
+        }
+        while ($while) {
+            try {
+                list($key, $value) = static::$redis->blpop($queue, 0);
+                $body = json_decode($value);
+                $class = array_shift($body);
+                call_user_func_array(array($class, 'perform'), $body);
+            } catch (\Exception $e) {
+                // Re-enqueue
+                array_unshift($body, $class);
+                call_user_func_array(array('static', 'enqueue'), $body);
+                echo "Failed: {$class}: {$value}. Re-enqueue\n";
+            }
+        }
     }
 
 }
