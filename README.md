@@ -6,12 +6,12 @@ Redis Message Queue (ReMQ) is a message queue built on top of the awesome Redis 
 
 ## Jobs
 
-Jobs are stored as classes. The class must have a process method which can take a variable number of parameters.
+Jobs are stored as classes. The class must have a perform method which can take a variable number of parameters.
 
 	class JobClass
 	{
 
-		static function process($param1, $param2)
+		static function perform($param1, $param2)
 		{
 			echo "Ran job with {$param1} and {$param2}.";
 		}
@@ -27,11 +27,19 @@ Instead of creating a queue for each job, ReMQ allows multiple jobs per queue. T
 
 ## Processing Jobs
 
-To process a job, you need to create a worker, add the queues to process with the worker, and then finally process it.
+To process a job, you need to create a worker for the queue.
 
-	$worker = new ReMQ\Worker();
-	$worker->addQueue('name');
+	$worker = new ReMQ\Worker('name');
 	$worker->process();
+
+You can also add additional queues to process.
+
+	$worker->addQueue('other');
+
+You can also match queue names.
+
+	$worker->addQueue('*');
+	$worker->addQueue('namespaced:*');
 
 ## Redis
 

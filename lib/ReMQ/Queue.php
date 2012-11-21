@@ -32,7 +32,7 @@ class Queue extends ReMQ
      */
     private function isValidJob($class)
     {
-        if (!method_exists($class, 'process')) {
+        if (!method_exists($class, 'perform')) {
             throw new BadJobException($class . ' is not a valid job');
             return false;
         }
