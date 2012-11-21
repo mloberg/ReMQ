@@ -40,11 +40,12 @@ You can also match queue names.
 	$worker->addQueue('*');
 	$worker->addQueue('namespaced:*');
 
-To run the worker, you will call *run*, *runCount*, or *runForever*.
+To run the worker, you will call *run*, *runTime*, *runCount*, or *runForever*.
 
-	$worker->run(60); // run the worker for 60 seconds
-	$worker->runCount(10); // run 10 jobs
-	$worker->runForever(); // run until the script is killed
+	$worker->runTime(60); // run the worker for 60 seconds. REMQ_RUN_TIME
+	$worker->runCount(10); // run 10 jobs. REMQ_RUN_COUNT
+	$worker->runForever(); // run until the script is killed. REMQ_RUN_FOREVER
+	$worker->run(REMQ_RUN_TYPE, [$unit]); // default is REMQ_RUN_FOREVER
 
 ## Failing Jobs
 

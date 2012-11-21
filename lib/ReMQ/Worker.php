@@ -2,6 +2,18 @@
 
 namespace ReMQ;
 
+if (!defined('REMQ_RUN_FOREVER')) {
+    define('REMQ_RUN_FOREVER', 1);
+}
+if (!defined('REMQ_RUN_TIME')) {
+    define('REMQ_RUN_TIME', 2);
+}
+if (!defined('REMQ_RUN_COUNT')) {
+    define('REMQ_RUN_COUNT', 3);
+}
+
+class BadRunTypeException extends \Exception { }
+
 class Worker extends ReMQ
 {
 
@@ -73,11 +85,35 @@ class Worker extends ReMQ
     }
 
     /**
+     * Run the worker.
+     *
+     * @throws BadRunTypeException If unknown run type
+     * @param integer $type Run type (REMQ_RUN_FORVER, REMQ_RUN_TIME, REMQ_RUN_COUNT)
+     * @param integer $unit Run type measure
+     */
+    public function run($type = REMQ_RUN_FOREVER, $unit = null) {
+        switch ($type) {
+            case REMQ_RUN_FOREVER:
+                $this->runForever();
+                break;
+            case REMQ_RUN_TIME:
+                $this->runTime($unit);
+                break;
+            case REMQ_RUN_COUNT:
+                $this->runCount($unit);
+                break;
+            default:
+                throw new BadRunTypeException("Unknown run type {$type}");
+                break;
+        }
+    }
+
+    /**
      * Run the worker for a set period of time.
      *
      * @param integer $time Time to run worker
      */
-    public function run($time = 1)
+    public function runTime($time)
     {
         // When we started running
         $start = time();

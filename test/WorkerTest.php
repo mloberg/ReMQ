@@ -68,7 +68,7 @@ class WorkerTest extends PHPUnit_Framework_TestCase
         $redisStub->expects($this->once())
                   ->method('blpop')
                   ->will($this->returnValue(array('example', json_encode($jobInfo))));
-        $w->runCount(1);
+        $w->run(REMQ_RUN_COUNT, 1);
     }
 
     /**
