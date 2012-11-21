@@ -2,9 +2,11 @@
 	"name": "remq/remq",
 	"type": "library",
 	"description": "Redis-backed Queue Service",
-	"version": "0.0.1",
+	"keywords": ["message queue", "queue", "redis"],
+	"license": "MIT",
 	"require": {
-		"predis/predis": "v0.8.0"
+		"predis/predis": "v0.8.0",
+		"php": ">=5.3.0"
 	},
 	"authors": [
 		{
