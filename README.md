@@ -30,7 +30,6 @@ Instead of creating a queue for each job, ReMQ allows multiple jobs per queue. T
 To process a job, you need to create a worker for the queue.
 
 	$worker = new ReMQ\Worker('name');
-	$worker->process();
 
 You can also add additional queues to process.
 
@@ -40,6 +39,26 @@ You can also match queue names.
 
 	$worker->addQueue('*');
 	$worker->addQueue('namespaced:*');
+
+To run the worker, you will call *run*, *runCount*, or *runForever*.
+
+	$worker->run(60); // run the worker for 60 seconds
+	$worker->runCount(10); // run 10 jobs
+	$worker->runForever(); // run until the script is killed
+
+## Failing Jobs
+
+If an exception is thrown when a job is being processed, the job will be re-enqueued, and the exception rethrown.
+
+	try {
+		$worker->runForever();
+	} Catch (Exception $e) {
+		echo $e->getMessage();
+	}
+
+#### TODO:
+
+* Handle errors.
 
 ## Redis
 

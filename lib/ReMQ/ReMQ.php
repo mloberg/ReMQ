@@ -2,6 +2,8 @@
 
 namespace ReMQ;
 
+class BadJobException extends \Exception { }
+
 abstract class ReMQ
 {
 
@@ -9,7 +11,7 @@ abstract class ReMQ
      * The Redis connection object.
      * @var object Redis connection
      */
-    private $redis = null;
+    protected $redis = null;
 
     /**
      * Connect to Redis with non-standard settings.
@@ -43,6 +45,33 @@ abstract class ReMQ
             $this->redis = new Redis();
         }
         return $this->redis;
+    }
+
+    /**
+     * Return a normalized ReMQ queue name.
+     *
+     * @param string $name Queue name
+     * @return string Normalized name
+     */
+    protected function normalizeQueueName($name)
+    {
+        return 'remq:' . $name;
+    }
+
+    /**
+     * Check if the job is valid (has process method).
+     *
+     * @param string $class Class name
+     * @throws BadJobException if the job isn't valid
+     * @return boolean True if job is valid
+     */
+    protected function isValidJob($class)
+    {
+        if (!method_exists($class, 'perform')) {
+            throw new BadJobException($class . ' is not a valid job');
+            return false;
+        }
+        return true;
     }
 
 }

@@ -12,13 +12,21 @@ class WorkerTest extends PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->redisStub = $this->getMock('stdClass', array('blpop'));
+        $this->redisStub = $this->getMock('stdClass', array('keys', 'blpop', 'rpush'));
         $this->w = new Worker();
         $this->w->setRedis($this->redisStub);
     }
 
+    private function redisReturnsEmptyArray()
+    {
+        $this->redisStub->expects($this->any())
+                        ->method('keys')
+                        ->will($this->returnValue(array()));
+    }
+
     public function testAddQueue()
     {
+        $this->redisReturnsEmptyArray();
         $w = $this->w;
         $w->addQueue('example');
         $this->assertContains('example', $w->queues());
@@ -30,6 +38,7 @@ class WorkerTest extends PHPUnit_Framework_TestCase
 
     public function testRemoveQueue()
     {
+        $this->redisReturnsEmptyArray();
         $w = $this->w;
         $w->addQueue('example');
         $w->addQueue('test');
@@ -38,11 +47,59 @@ class WorkerTest extends PHPUnit_Framework_TestCase
         $this->assertNotContains('example', $w->queues());
     }
 
+    public function testWillAddAllQueues()
+    {
+        $w = $this->w;
+        $redisStub = $this->redisStub;
+        $redisStub->expects($this->once())
+                  ->method('keys')
+                  ->will($this->returnValue(array('remq:foo', 'remq:bar')));
+        $w->addQueue('*');
+        $this->assertContains('foo', $w->queues());
+        $this->assertContains('bar', $w->queues());
+    }
+
     public function testProcess()
     {
         $w = $this->w;
         $redisStub = $this->redisStub;
-        $this->markTestIncomplete('This test has not been implemented yet.');
+        TestJob::setPHPUnit($this);
+        $jobInfo = array('TestJob', 'foo', 'bar');
+        $redisStub->expects($this->once())
+                  ->method('blpop')
+                  ->will($this->returnValue(array('example', json_encode($jobInfo))));
+        $w->runCount(1);
+    }
+
+    /**
+     * @expectedException FailedJobException
+     */
+    public function testReEnqueueAfterException()
+    {
+        $w = $this->w;
+        $redisStub = $this->redisStub;
+        $jobInfo = json_encode(array('FailingJob'));
+        $redisStub->expects($this->once())
+                  ->method('rpush')
+                  ->with('example', $jobInfo);
+        $redisStub->expects($this->once())
+                  ->method('blpop')
+                  ->will($this->returnValue(array('example', $jobInfo)));
+        $w->runCount(1);
+    }
+
+    /**
+     * @expectedException ReMQ\BadJobException
+     */
+    public function testThrowsExceptionIfNotValidJob()
+    {
+        $w = $this->w;
+        $redisStub = $this->redisStub;
+        $jobInfo = json_encode(array('BadJob'));
+        $redisStub->expects($this->once())
+                  ->method('blpop')
+                  ->will($this->returnValue(array('example', $jobInfo)));
+        $w->runCount(1);
     }
 
 }

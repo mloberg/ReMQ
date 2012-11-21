@@ -7,7 +7,7 @@ class Worker extends ReMQ
 
     /**
      * List of queues to process.
-     * @var array Queses
+     * @var array Queues
      */
     private $queues = array();
 
@@ -30,7 +30,8 @@ class Worker extends ReMQ
      */
     private function findQueues($match)
     {
-        return $this->redis()->keys('remq:' . $match);
+        $match = $this->normalizeQueueName($match);
+        return $this->redis()->keys($match);
     }
 
     /**
@@ -40,7 +41,9 @@ class Worker extends ReMQ
      */
     public function addQueue($name)
     {
-        array_push($this->queues, $name);
+        $queues = $this->findQueues($name);
+        array_push($queues, $this->normalizeQueueName($name));
+        $this->queues = array_unique(array_merge($this->queues, $queues));
     }
 
     /**
@@ -51,7 +54,7 @@ class Worker extends ReMQ
     public function removeQueue($name)
     {
         foreach ($this->queues as $key => $value) {
-            if ($value === $name) {
+            if ($value === $this->normalizeQueueName($name)) {
                 unset($this->queues[$key]);
             }
         }
@@ -64,39 +67,89 @@ class Worker extends ReMQ
      */
     public function queues()
     {
-        return $this->queues;
+        return array_map(function($name) {
+            return preg_replace('/^remq\:/', '', $name);
+        }, $this->queues);
     }
 
     /**
-     * Run the worker.
+     * Run the worker for a set period of time.
+     *
+     * @param integer $time Time to run worker
      */
-    public static function process()
+    public function run($time = 1)
     {
-        // need to match queues
-        // trap CTRL-C
-        pcntl_signal(SIGTERM, function($signo) {
-            //
-        });
-        // loop
-        if ($time === 0) {
-            // loop forever
-            $while = true;
-        } else {
-            $start = time();
-            $while = ($start + $time) > time();
+        // When we started running
+        $start = time();
+        // get the queues we're running
+        $queues = $this->queues;
+        // BLPOP needs a timeout parameteer
+        array_push($queues, 1);
+        // Process
+        while (($start + $time) > time()) {
+            $this->process($queues);
         }
-        while ($while) {
-            try {
-                list($key, $value) = static::$redis->blpop($queue, 0);
-                $body = json_decode($value);
+    }
+
+    /**
+     * Run the worker a specified number of times.
+     *
+     * @param integer $count Number of times to run
+     */
+    public function runCount($count)
+    {
+        // Keep count
+        $ran = 0;
+        // get the queues we're running
+        $queues = $this->queues;
+        // BLPOP needs a timeout parameteer
+        array_push($queues, 0);
+        // Process
+        while ($count > $ran) {
+            $this->process($queues);
+            $ran++;
+        }
+    }
+
+    /**
+     * Run the worker forever.
+     */
+    public function runForever()
+    {
+        // get the queues we're running
+        $queues = $this->queues;
+        // BLPOP needs a timeout parameteer
+        array_push($queues, 0);
+        while (true) {
+            $this->process($queues);
+        }
+    }
+
+    /**
+     * Handle the Job processing.
+     *
+     * @todo Handle errors as well as exceptions
+     *
+     * @param array $queues List of queues to process
+     */
+    private function process($queues)
+    {
+        // Our Redis call
+        $redis = array($this->redis(), 'blpop');
+        try {
+            list($queue, $job) = call_user_func_array($redis, $queues);
+            // Make sure we have a valid return
+            if ($job) {
+                $body = json_decode($job);
                 $class = array_shift($body);
-                call_user_func_array(array($class, 'perform'), $body);
-            } catch (\Exception $e) {
-                // Re-enqueue
-                array_unshift($body, $class);
-                call_user_func_array(array('static', 'enqueue'), $body);
-                echo "Failed: {$class}: {$value}. Re-enqueue\n";
+                if ($this->isValidJob($class)) {
+                    call_user_func_array(array($class, 'perform'), $body);
+                }
             }
+        } catch (\Exception $e) {
+            // Re-enqueue
+            $this->redis()->rpush($queue, $job);
+            throw $e;
         }
     }
 

@@ -2,8 +2,6 @@
 
 namespace ReMQ;
 
-class BadJobException extends \Exception { }
-
 class Queue extends ReMQ
 {
 
@@ -21,22 +19,6 @@ class Queue extends ReMQ
     public function __construct($queue)
     {
         $this->queue = 'remq:' . strtolower($queue);
-    }
-
-    /**
-     * Check if the job is valid (has process method).
-     *
-     * @param string $class Class name
-     * @throws BadJobException if the job isn't valid
-     * @return boolean True if job is valid
-     */
-    private function isValidJob($class)
-    {
-        if (!method_exists($class, 'perform')) {
-            throw new BadJobException($class . ' is not a valid job');
-            return false;
-        }
-        return true;
     }
 
     /**
