@@ -1,5 +1,5 @@
 {
-	"name": "ReMQ/ReMQ",
+	"name": "remq/remq",
 	"type": "library",
 	"description": "Redis-backed Queue Service",
 	"version": "0.0.1",
