@@ -2,7 +2,7 @@
 	"name": "ReMQ/ReMQ",
 	"type": "library",
 	"description": "Redis-backed Queue Service",
-	"version": "0.0.1-alpha",
+	"version": "0.0.1",
 	"require": {
 		"predis/predis": "v0.8.0"
 	},
